@@ -1,0 +1,84 @@
+# docker compose up --build                     api + dashboard + postgres
+# docker compose --profile slack up --build     also starts the Slack bot (needs tokens in .env)
+x-app: &app
+  build:
+    context: .
+    args:
+      INSTALL_SBERT: ${INSTALL_SBERT:-true}
+  image: comms-triage
+  env_file:
+    - path: .env
+      required: false
+  environment: &app-env
+    EMBEDDING_BACKEND: ${EMBEDDING_BACKEND:-sbert}
+    MODEL_DIR: /app/artifacts/robust
+    DATABASE_URL: postgresql+psycopg://triage:triage@db:5432/triage
+  volumes:
+    - artifacts:/app/artifacts
+    - hf_models:/models
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: triage
+      POSTGRES_PASSWORD: triage
+      POSTGRES_DB: triage
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U triage -d triage"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # One shot: trains both models, builds the index, runs the evaluations, then exits.
+  trainer:
+    <<: *app
+    command: ["sh", "scripts/train_all.sh"]
+
+  api:
+    <<: *app
+    command: ["uvicorn", "comms_triage.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      trainer:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 6
+
+  dashboard:
+    <<: *app
+    command: ["streamlit", "run", "dashboard/app.py", "--server.port", "8501", "--server.address", "0.0.0.0", "--server.headless", "true"]
+    environment:
+      <<: *app-env
+      API_URL: http://api:8000
+    ports:
+      - "${DASHBOARD_PORT:-8501}:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  slack:
+    <<: *app
+    profiles: ["slack"]
+    command: ["python", "-m", "comms_triage.integrations.slack_bot"]
+    environment:
+      <<: *app-env
+      API_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  artifacts:
+  hf_models:
+  pg_data:

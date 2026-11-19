@@ -1,0 +1,30 @@
+{"query": "When did we launch Edge Shield and how many customers used the beta?", "relevant": ["kb01"]}
+{"query": "Is the web application firewall free on the Pro plan?", "relevant": ["kb01"]}
+{"query": "How many malicious requests does the firewall block per day?", "relevant": ["kb01"]}
+{"query": "How many DNS queries per day does our resolver answer?", "relevant": ["kb02"]}
+{"query": "Do we log client IP addresses on the public resolver?", "relevant": ["kb02"]}
+{"query": "What share of traffic was bots this year?", "relevant": ["kb03"]}
+{"query": "Biggest DDoS attack we mitigated in terabits", "relevant": ["kb03"]}
+{"query": "Which industry was attacked the most?", "relevant": ["kb03"]}
+{"query": "What caused the June outage and how long did it last?", "relevant": ["kb04"]}
+{"query": "Was customer data exposed in the DNS incident?", "relevant": ["kb04"]}
+{"query": "Zero trust product that replaces VPNs", "relevant": ["kb05"]}
+{"query": "How many users are free on Vault Gateway?", "relevant": ["kb05"]}
+{"query": "How many cities is our network in now?", "relevant": ["kb06"]}
+{"query": "What percent of internet users are within 50 ms of a data center?", "relevant": ["kb06"]}
+{"query": "Who is the new CFO and where did she come from?", "relevant": ["kb07"]}
+{"query": "What did we ship during Developer Week?", "relevant": ["kb08"]}
+{"query": "How many developers build on the platform?", "relevant": ["kb08"]}
+{"query": "Q2 revenue and growth rate", "relevant": ["kb09"]}
+{"query": "How many large customers did we add last quarter?", "relevant": ["kb09"]}
+{"query": "How many election websites do we protect for free?", "relevant": ["kb10"]}
+{"query": "How many employees will the Lisbon office hold?", "relevant": ["kb11"]}
+{"query": "Which European cities do we have hubs in?", "relevant": ["kb11"]}
+{"query": "How many days a week are we expected in the office?", "relevant": ["kb12"]}
+{"query": "When is the security training due?", "relevant": ["kb13"]}
+{"query": "What happens if I miss the security awareness course?", "relevant": ["kb13"]}
+{"query": "Where can I download the logo and brand colors?", "relevant": ["kb14"]}
+{"query": "Can I recolor the logo for a partner slide?", "relevant": ["kb14"]}
+{"query": "A journalist emailed me, can I reply directly?", "relevant": ["kb15"]}
+{"query": "Which team writes executive speeches?", "relevant": ["kb15"]}
+{"query": "How much notice does the comms team need for a request?", "relevant": ["kb15"]}

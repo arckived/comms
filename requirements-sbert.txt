@@ -1,0 +1,4 @@
+# Extra packages for EMBEDDING_BACKEND=sbert (MiniLM sentence embeddings).
+# Install CPU only torch first to keep it small:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+sentence-transformers>=3.0
