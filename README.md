@@ -52,52 +52,57 @@ Slack #comms-requests / web form
 
 ## Results
 
-Numbers below are from the **offline TF-IDF backend** (what CI and the tests use). The MiniLM backend runs in the
-`sbert` CI job; its results appear in that job's summary on GitHub Actions.
+Two embedding backends, same data and code. **MiniLM** (`sentence-transformers/all-MiniLM-L6-v2`) is what Docker
+uses by default. **TF-IDF** is the offline backend used by the tests. Both run in CI on every push.
 
 **Test set:** 44 handwritten requests that the model never sees in training, in any form.
 
-| Metric | Value |
-|---|---|
-| Test accuracy / macro F1 | 84% / 0.85 |
-| Share routed automatically (threshold 0.90) | 55% |
-| Accuracy on the automatically routed requests | 100% (24 of 24) |
-| Vague requests sent to review | 100% |
-| Same model at threshold 0.80: auto routed / accuracy | 68% / 97% |
-| Retrieval HitRate@1 / HitRate@3 / MRR (30 queries) | 97% / 100% / 0.98 |
-| Rule extraction on test: urgency accuracy / deadline phrase match | 80% / 100% |
-
-**Model selection** (5 fold cross validation, grouped so variants of one request never sit in two folds):
-
-| Candidate | CV accuracy | CV macro F1 |
+| Metric (served "robust" model) | MiniLM | TF-IDF |
 |---|---|---|
-| TF-IDF + logistic regression (baseline) | 77% | 0.76 |
-| Embeddings + logistic regression | 82% | 0.81 |
-| **Embeddings + calibrated linear SVM (chosen)** | **82%** | **0.82** |
-| Embeddings + SVM/XGBoost ensemble | 80% | 0.80 |
+| Test accuracy / macro F1 | **93% / 0.93** | 84% / 0.85 |
+| Share routed automatically (threshold 0.90) | **66%** | 55% |
+| Accuracy on the automatically routed requests | 100% (29 of 29) | 100% (24 of 24) |
+| Vague requests sent to review | 100% | 100% |
+| Retrieval HitRate@1 / HitRate@3 / MRR (30 queries) | 100% / 100% / 1.00 | 97% / 100% / 0.98 |
+| Rule extraction: urgency accuracy / deadline phrase match | 80% / 100% | 80% / 100% |
 
-**Robustness** (`reports/robustness.md`). "Robust" is trained with extra informal and typo variants.
-Rewording is a transform it never trains on.
+**Model selection** (5 fold cross validation, grouped so variants of one request never sit in two folds;
+base training set):
 
-| Variant | Base accuracy | Robust accuracy |
+| Candidate | MiniLM CV macro F1 | TF-IDF CV macro F1 |
 |---|---|---|
-| Clean | 84% | 84% |
-| Reworded | 84% | 84% |
-| Informal ("yo can some1 post…") | 86% | 86% |
-| Typos (~6% of letters) | 77% | **84%** |
-| Two requests in one message (either team counts) | 98% | 98% |
+| TF-IDF + logistic regression (baseline, no embeddings) | 0.78 | 0.78 |
+| Embeddings + logistic regression | 0.88 | 0.81 |
+| Embeddings + calibrated linear SVM | 0.88 | **0.81** (chosen) |
+| Embeddings + SVM/XGBoost ensemble | **0.88** (chosen) | 0.74 |
+
+**Robustness** (`reports/robustness.md`). "Base" is trained on the requests as written; "robust" also trains on
+informal and typo variants. Rewording is a transform neither model trains on.
+
+| Variant | MiniLM base | MiniLM robust | TF-IDF base | TF-IDF robust |
+|---|---|---|---|---|
+| Clean | 93% | 93% | 84% | 84% |
+| Reworded | 89% | 91% | 84% | 84% |
+| Informal ("yo can some1 post…") | 93% | 96% | 86% | 86% |
+| Typos (~6% of letters) | 86% | 84% | 77% | **84%** |
+| Two requests in one message (either team counts) | 100% | 100% | 98% | 98% |
 
 **What I learned**
-* **Variety beats volume.** With only 66 training requests plus 9 template variants each, test accuracy was 45%.
+* **Variety beats volume.** With only 66 training requests plus 9 template variants each, TF-IDF test accuracy was 45%.
   Adding 225 *new, different* requests raised it to 80% and then 84%. Rephrasing the same 66 requests 9 more
   times added almost nothing.
 * **The threshold matters more than the model.** The best candidates differ by 1 to 2 points, while moving the
-  threshold from 0.80 to 0.90 trades 13 points of automation for 3 points of accuracy on the requests that skip
+  threshold from 0.80 to 0.90 (TF-IDF) trades 13 points of automation for 3 points of accuracy on the requests that skip
   review. The threshold is chosen on out of fold predictions, as the lowest one that keeps automatic routing
   at least 95% accurate.
-* **Typos were the real weakness**, and targeted augmentation fixed them. Character n-grams made the TF-IDF
-  model fairly tolerant of informal text already.
-* **Multi-team messages get lower confidence** (only 32% routed automatically compared with 55% for normal ones),
+* **Embeddings are worth it.** Swapping TF-IDF for MiniLM raised test accuracy from 84% to 93% and the share
+  routed automatically from 55% to 66%, with no loss in accuracy on what skips review.
+* **Augmentation only helps the model that needs it.** Typo augmentation fixed the TF-IDF model's typo weakness
+  (77% to 84%), but did nothing for MiniLM, which was already tolerant of typos (86% to 84%, within noise).
+  It also lowered MiniLM's cross validation score slightly (0.88 to 0.85). A fix should be justified by a
+  measured weakness, not added by default.
+* **Multi-team messages get lower confidence** (routed automatically 48% of the time compared with 66% for normal
+  requests with MiniLM, and 32% compared with 55% with TF-IDF),
   which is the right behavior: people should split those.
 
 **Caveats, stated plainly**

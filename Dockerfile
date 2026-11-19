@@ -27,6 +27,7 @@ COPY data/ data/
 COPY eval/ eval/
 COPY scripts/ scripts/
 COPY dashboard/ dashboard/
+COPY tests/ tests/
 
 RUN useradd --create-home --uid 1000 app && mkdir -p /app/artifacts /models && \
     chown -R app:app /app /models
