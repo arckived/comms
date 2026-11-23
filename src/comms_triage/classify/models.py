@@ -64,10 +64,10 @@ class EmbeddingClassifier(TextClassifier):
         if kind == "lr":
             return LogisticRegression(C=5, max_iter=3000)
         if kind == "svm":
-            return CalibratedClassifierCV(LinearSVC(C=0.5), cv=3, method="sigmoid")
+            return CalibratedClassifierCV(LinearSVC(C=0.5, random_state=0), cv=3, method="sigmoid")
         if kind == "xgb":
             from xgboost import XGBClassifier
-            return XGBClassifier(n_estimators=250, max_depth=4, learning_rate=0.1, subsample=0.9,
+            return XGBClassifier(random_state=0, n_estimators=250, max_depth=4, learning_rate=0.1, subsample=0.9,
                                  colsample_bytree=0.8, objective="multi:softprob", num_class=n_classes,
                                  eval_metric="mlogloss", n_jobs=2, verbosity=0)
         raise ValueError(kind)
