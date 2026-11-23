@@ -60,12 +60,18 @@ uses by default. **TF-IDF** is the offline backend used by the tests. Both run i
 | Metric (served "robust" model) | MiniLM | TF-IDF |
 |---|---|---|
 | Test accuracy / macro F1 | **95% / 0.96** | 86% / 0.87 |
-| Confidence threshold (chosen in training) | 0.85 | 0.90 |
+| Confidence threshold (chosen in training) | 0.85 (0.70 on GitHub Actions, see below) | 0.90 |
 | Share routed automatically | **68%** | 59% |
 | Accuracy on the automatically routed requests | 100% (30 of 30) | 100% (26 of 26) |
 | Vague requests sent to review | 100% | 100% |
 | Retrieval HitRate@1 / HitRate@3 / MRR (30 queries) | 100% / 100% / 1.00 | 97% / 100% / 0.98 |
 | Rule extraction: urgency accuracy / deadline phrase match | 80% / 100% | 80% / 100% |
+
+Training is seeded, so reruns on the same machine give identical numbers. Different machines can still differ
+slightly, because MiniLM's embeddings vary in the last decimal places between CPUs and library builds. The chosen
+threshold is the most sensitive part: the out of fold accuracy curve is nearly flat around the 95% target, so a
+tiny shift moves it between 0.70 (GitHub Actions) and 0.85 (my development machine). The test results ended up the
+same on both: 95% accuracy, 68% routed automatically, and every automatic decision correct.
 
 **Model selection** (5 fold cross validation, grouped so variants of one request never sit in two folds;
 base training set):
