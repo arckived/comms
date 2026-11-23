@@ -183,7 +183,12 @@ def main(argv: list[str] | None = None) -> dict:
     best = max(cv_results, key=lambda n: cv_results[n]["macro_f1"])
     oof, classes = oof_by_model[best]
     oof_pred = [classes[i] for i in oof.argmax(axis=1)]
-    curve = threshold_curve(labels, oof_pred, oof.max(axis=1))
+    # Choose the threshold on rows that look like real requests. The typo and chat speak copies
+    # added by --augment-robust are deliberately harder; including them makes the threshold
+    # stricter than it needs to be for real traffic. (The robustness eval still tests them.)
+    real = np.array([not str(r.get("source", "")).startswith("augment_") for r in rows])
+    curve = threshold_curve([l for l, keep in zip(labels, real) if keep],
+                            [p for p, keep in zip(oof_pred, real) if keep], oof.max(axis=1)[real])
     threshold = choose_threshold(curve, args.target_accuracy)
     print(f"best={best} threshold={threshold} (target auto accuracy {args.target_accuracy})")
 

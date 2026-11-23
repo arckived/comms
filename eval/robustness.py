@@ -52,9 +52,9 @@ def score(artifact: dict, rows: list[dict]) -> dict:
     auto = (conf >= threshold) & (np.array(pred) != "Unclear")
     # Macro F1 against the first listed team (only meaningful for single-team variants).
     f1 = f1_score([r["team"] for r in rows], pred, average="macro")
-    return {"n": len(rows), "accuracy": round(float(correct.mean()), 3), "macro_f1": round(float(f1), 3),
-            "auto_rate": round(float(auto.mean()), 3),
-            "auto_accuracy": round(float(correct[auto].mean()), 3) if auto.any() else None,
+    return {"n": len(rows), "accuracy": round(float(correct.mean()), 4), "macro_f1": round(float(f1), 3),
+            "auto_rate": round(float(auto.mean()), 4),
+            "auto_accuracy": round(float(correct[auto].mean()), 4) if auto.any() else None,
             "mean_confidence": round(float(conf.mean()), 3)}
 
 

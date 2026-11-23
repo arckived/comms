@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from comms_triage.config import ROUTABLE_TEAMS
+from comms_triage.text import shorten
 
 URGENCY_EMOJI = {"high": ":red_circle:", "medium": ":large_orange_circle:", "low": ":white_circle:"}
 
@@ -19,7 +20,7 @@ def _fields(req: dict) -> str:
 def _related(req: dict) -> list[dict]:
     items = []
     for r in (req.get("related") or [])[:3]:
-        label = r["title"]
+        label = shorten(r["title"], 90)
         if r.get("url"):
             label = f"<{r['url']}|{label}>"
         prefix = "Past request" if r["kind"] == "past_request" else "Announcement"

@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from comms_triage.extract.rules import extract_rules, resolve_deadline
 from comms_triage.extract.schema import ExtractedFields
 from comms_triage.llm import LLMClient, LLMError
+from comms_triage.text import shorten
 
 log = logging.getLogger(__name__)
 
@@ -58,7 +59,11 @@ def template_reply(team: str, fields: ExtractedFields, auto: bool, related: list
     else:
         parts.append("Could you share your deadline?")
     if related:
-        parts.append(f"Related: {related[0]['title']}.")
+        # Point to an earlier announcement if there is one; it is more useful than a past request.
+        best = next((r for r in related if r.get("kind") == "doc"), related[0])
+        label = "Earlier announcement" if best.get("kind") == "doc" else "Similar past request"
+        title = shorten(best["title"], 80)
+        parts.append(f"{label}: \"{title}\"" + ("" if title.endswith(("…", "?", "!", ".")) else "."))
     return " ".join(parts)
 
 
@@ -67,7 +72,7 @@ def draft_reply(text: str, team: str, fields: ExtractedFields, auto: bool, relat
     fallback = template_reply(team, fields, auto, related)
     if llm is None or not llm.enabled:
         return fallback
-    context = "\n".join(f"- {r['title']} ({r.get('url') or r.get('kind')})" for r in related[:3]) or "none"
+    context = "\n".join(f"- {shorten(r['title'], 120)} ({r.get('url') or r.get('kind')})" for r in related[:3]) or "none"
     prompt = (f"Request: {text}\nOwning team: {team if auto else 'not decided yet, under review'}\n"
               f"Deadline: {fields.deadline or 'unknown'}\nRelated past work:\n{context}")
     try:

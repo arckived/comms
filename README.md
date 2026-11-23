@@ -59,9 +59,10 @@ uses by default. **TF-IDF** is the offline backend used by the tests. Both run i
 
 | Metric (served "robust" model) | MiniLM | TF-IDF |
 |---|---|---|
-| Test accuracy / macro F1 | **93% / 0.93** | 84% / 0.85 |
-| Share routed automatically (threshold 0.90) | **66%** | 55% |
-| Accuracy on the automatically routed requests | 100% (29 of 29) | 100% (24 of 24) |
+| Test accuracy / macro F1 | **95% / 0.96** | 86% / 0.87 |
+| Confidence threshold (chosen in training) | 0.85 | 0.90 |
+| Share routed automatically | **68%** | 59% |
+| Accuracy on the automatically routed requests | 100% (30 of 30) | 100% (26 of 26) |
 | Vague requests sent to review | 100% | 100% |
 | Retrieval HitRate@1 / HitRate@3 / MRR (30 queries) | 100% / 100% / 1.00 | 97% / 100% / 0.98 |
 | Rule extraction: urgency accuracy / deadline phrase match | 80% / 100% | 80% / 100% |
@@ -71,39 +72,44 @@ base training set):
 
 | Candidate | MiniLM CV macro F1 | TF-IDF CV macro F1 |
 |---|---|---|
-| TF-IDF + logistic regression (baseline, no embeddings) | 0.78 | 0.78 |
-| Embeddings + logistic regression | 0.88 | 0.81 |
-| Embeddings + calibrated linear SVM | 0.88 | **0.81** (chosen) |
-| Embeddings + SVM/XGBoost ensemble | **0.88** (chosen) | 0.74 |
+| TF-IDF + logistic regression (baseline, no embeddings) | 0.80 | 0.80 |
+| Embeddings + logistic regression | 0.87 | 0.85 |
+| Embeddings + calibrated linear SVM | 0.88 | **0.86** (chosen) |
+| Embeddings + SVM/XGBoost ensemble | **0.89** (chosen) | 0.81 |
 
 **Robustness** (`reports/robustness.md`). "Base" is trained on the requests as written; "robust" also trains on
 informal and typo variants. Rewording is a transform neither model trains on.
 
 | Variant | MiniLM base | MiniLM robust | TF-IDF base | TF-IDF robust |
 |---|---|---|---|---|
-| Clean | 93% | 93% | 84% | 84% |
-| Reworded | 89% | 91% | 84% | 84% |
-| Informal ("yo can some1 post…") | 93% | 96% | 86% | 86% |
-| Typos (~6% of letters) | 86% | 84% | 77% | **84%** |
-| Two requests in one message (either team counts) | 100% | 100% | 98% | 98% |
+| Clean | 93% | 95% | 82% | 86% |
+| Reworded | 86% | 91% | 86% | 89% |
+| Informal ("yo can some1 post…") | 91% | 95% | 84% | 89% |
+| Typos (~6% of letters) | 89% | 89% | 82% | 84% |
+| Two requests in one message (either team counts) | 100% | 100% | 98% | 100% |
 
 **What I learned**
-* **Variety beats volume.** With only 66 training requests plus 9 template variants each, TF-IDF test accuracy was 45%.
-  Adding 225 *new, different* requests raised it to 80% and then 84%. Rephrasing the same 66 requests 9 more
-  times added almost nothing.
-* **The threshold matters more than the model.** The best candidates differ by 1 to 2 points, while moving the
-  threshold from 0.80 to 0.90 (TF-IDF) trades 13 points of automation for 3 points of accuracy on the requests that skip
-  review. The threshold is chosen on out of fold predictions, as the lowest one that keeps automatic routing
-  at least 95% accurate.
-* **Embeddings are worth it.** Swapping TF-IDF for MiniLM raised test accuracy from 84% to 93% and the share
-  routed automatically from 55% to 66%, with no loss in accuracy on what skips review.
-* **Augmentation only helps the model that needs it.** Typo augmentation fixed the TF-IDF model's typo weakness
-  (77% to 84%), but did nothing for MiniLM, which was already tolerant of typos (86% to 84%, within noise).
-  It also lowered MiniLM's cross validation score slightly (0.88 to 0.85). A fix should be justified by a
-  measured weakness, not added by default.
-* **Multi-team messages get lower confidence** (routed automatically 48% of the time compared with 66% for normal
-  requests with MiniLM, and 32% compared with 55% with TF-IDF),
-  which is the right behavior: people should split those.
+* **Variety beats volume.** With only 66 training requests plus 9 template variants each, TF-IDF test accuracy was
+  45%. Adding 225 *new, different* requests raised it to 84%. Rephrasing the same 66 requests 9 more times
+  added almost nothing.
+* **Targeted data fixes a specific confusion.** "Can design make a banner for the launch blog post?" was only
+  66% Design and 34% Social, because "post" usually means a social post. Adding 26 requests that contrast
+  "design something for a blog post" with "share a blog post" raised it to 87% Design, enough to route it
+  automatically.
+* **Choose the threshold on data that looks like real traffic.** At first the threshold was chosen on all training
+  rows, two thirds of which were typo and chat speak copies made for augmentation. Those are harder than real
+  requests, so the threshold came out at 0.90. Choosing it on the real looking rows gave 0.85, which routes
+  4 more points of test requests automatically with no loss in accuracy.
+* **Embeddings are worth it.** MiniLM beats TF-IDF by 9 points of test accuracy (95% vs 86%) and routes more
+  requests automatically (68% vs 59%), with every automatic decision correct for both.
+* **Check augmentation, don't assume it.** In the first version, typo augmentation helped TF-IDF but slightly hurt
+  MiniLM. With the larger dataset it now helps both, mostly on reworded and informal requests. With 44 test
+  requests each one is about 2 points, so differences this size need a bigger test set to confirm.
+* **A retrieval bug hid every announcement.** Search took the top 20 matches and then kept only announcements.
+  With 66 past requests and 15 announcements, the top 20 was often all past requests, so announcements never
+  appeared. Ranking every entry when filtering by type fixed it, and a regression test now covers it.
+* **Multi-team messages get lower confidence** (routed automatically 42% of the time compared with 59% for normal
+  requests with TF-IDF), which is the right behavior: people should split those.
 
 **Caveats, stated plainly**
 * The seed requests and the 225 extra requests were written with an LLM (Claude) for this prototype, and the
@@ -112,6 +118,10 @@ informal and typo variants. Rewording is a transform neither model trains on.
 * 44 test requests means each one is about 2 percentage points. Treat differences under 5 points as noise.
 * The knowledge base is 15 fictional announcements, so retrieval is an easy benchmark. Use
   `fetch_rss.py` on a real public blog feed for a harder one.
+* "Related" only shows an announcement when its similarity is at least 0.30 (true matches in the test queries
+  score 0.35 or more; unrelated pages score 0.2 to 0.3). Some relevant pairs score lower: "a reporter wants a
+  comment on the outage" matches the outage post at only 0.25. Hybrid search (keywords plus embeddings) is the
+  next improvement.
 * The extraction rules were written while looking at the labeled requests, so their scores are optimistic.
 
 ## Run it

@@ -223,3 +223,29 @@
 {"id": "llm_unclear_023", "text": "Can someone look at this", "team": "Unclear", "source": "synthetic_llm"}
 {"id": "llm_unclear_024", "text": "I have a request", "team": "Unclear", "source": "synthetic_llm"}
 {"id": "llm_unclear_025", "text": "Need a hand", "team": "Unclear", "source": "synthetic_llm"}
+{"id": "llm_design_blog_001", "text": "Can design make a header image for my blog post about rate limiting?", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_002", "text": "Need a hero graphic for the engineering blog post going live Thursday.", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_003", "text": "Could someone design an illustration for the newsletter feature story?", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_004", "text": "Please make a cover image for the blog post on the threat report.", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_005", "text": "Need custom diagrams for my blog post explaining DNS caching.", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_006", "text": "Can design create a thumbnail for the blog article on zero trust?", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_007", "text": "Looking for a banner to put at the top of our product blog post.", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_008", "text": "Could design make a chart for the blog post about bot traffic trends?", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_009", "text": "Need an infographic to embed in the newsletter article about our network.", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_010", "text": "Can you design a featured image for the CTO's blog post?", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_011", "text": "Please create an Open Graph image for the launch announcement blog post.", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_012", "text": "The blog post needs a visual. Can design help with a header?", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_013", "text": "I need graphics for the LinkedIn article our VP is publishing.", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_014", "text": "Could design make a set of illustrations for a three part blog series?", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_015", "text": "Need a banner image for the newsletter and the blog post, same design.", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_016", "text": "Can design turn these stats into a graphic for the blog article?", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_017", "text": "We need an animated header for the Developer Week blog post.", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_018", "text": "Please design a social card image to go with the blog post.", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_019", "text": "Can someone make the screenshots in my blog post look on brand?", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_design_blog_020", "text": "Need a diagram for the article about how our edge network routes traffic.", "team": "Design", "source": "synthetic_llm"}
+{"id": "llm_social_blog_001", "text": "Can social share the new blog post on X and LinkedIn today?", "team": "Social", "source": "synthetic_llm"}
+{"id": "llm_social_blog_002", "text": "Please schedule posts promoting the threat report blog post next week.", "team": "Social", "source": "synthetic_llm"}
+{"id": "llm_social_blog_003", "text": "Could we tweet a link to the engineering blog post?", "team": "Social", "source": "synthetic_llm"}
+{"id": "llm_social_blog_004", "text": "Can social write a LinkedIn caption for the blog post about our new office?", "team": "Social", "source": "synthetic_llm"}
+{"id": "llm_social_blog_005", "text": "Please add the customer story blog post to the social calendar.", "team": "Social", "source": "synthetic_llm"}
+{"id": "llm_social_blog_006", "text": "Can we post the blog article in a thread on X with a few key stats?", "team": "Social", "source": "synthetic_llm"}

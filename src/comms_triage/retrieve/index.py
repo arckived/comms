@@ -17,6 +17,7 @@ import numpy as np
 from comms_triage.config import get_settings
 from comms_triage.data.io import load_jsonl
 from comms_triage.embeddings import make_embedder
+from comms_triage.text import shorten
 
 
 def chunk_words(text: str, size: int = 120, overlap: int = 30) -> list[str]:
@@ -41,8 +42,10 @@ def build_entries(knowledge_files: list[Path], past_requests: list[dict]) -> lis
                                 "url": doc.get("url"), "date": doc.get("date"),
                                 "text": f"{doc['title']}. {chunk}"})
     for req in past_requests:
+        if req.get("team") == "Unclear":
+            continue  # "test" or "can someone help" is never a useful match for anything
         entries.append({"kind": "past_request", "doc_id": req["id"], "chunk": 0,
-                        "title": req["text"][:90], "url": None, "team": req.get("team"),
+                        "title": shorten(req["text"], 90), "url": None, "team": req.get("team"),
                         "text": req["text"]})
     return entries
 
@@ -67,7 +70,10 @@ class KnowledgeIndex:
         if not self.entries:
             return []
         vector = np.ascontiguousarray(self.embedder.encode([query]), dtype="float32")
-        scores, ids = self.index.search(vector, min(len(self.entries), max(k * 4, 20)))
+        # With a kind filter, rank every entry: otherwise one kind (66 past requests) can fill the
+        # candidate list and hide the other (15 announcements) completely.
+        n = len(self.entries) if kind else min(len(self.entries), max(k * 4, 20))
+        scores, ids = self.index.search(vector, n)
         results, seen = [], set()
         for score, idx in zip(scores[0], ids[0]):
             if idx < 0:

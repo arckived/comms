@@ -50,7 +50,8 @@ ASSETS = {
     "interview": r"\binterview|\bpodcast\b|\bfireside\b|\btv\b",
     "media list": r"media list",
     "briefing": r"\bbrief(?:ing)?\b",
-    "social post": r"\b(?:post|tweet|repost|reshare|retweet|linkedin|instagram|tiktok|reel)\b",
+    # "blog post" is not a social post; "post the blog on LinkedIn" still is (via "linkedin").
+    "social post": r"(?<!blog )\bpost\b|\b(?:tweet|repost|reshare|retweet|linkedin|instagram|tiktok|reel)\b",
     "thread": r"\bthread\b",
     "video": r"\bvideo\b|\breel\b|\blivestream\b",
     "banner": r"\bbanner\b",
@@ -69,7 +70,8 @@ ASSETS = {
     "speech": r"\bspeech\b|\bremarks\b|\bkeynote\b|\bspeaker notes\b|\btestimony\b",
     "letter": r"\bletter\b|\bnote from\b|\bmemo\b",
     "bio": r"\bbio\b|\bheadshot\b",
-    "article": r"\barticle\b|\bop-?ed\b|\bblog\b",
+    # Only count a blog as the asset when someone is asked to write it, not when it needs a banner.
+    "article": r"\barticle\b|\bop-?ed\b|\b(?:write|draft|ghostwrite|writing)\b[^.?!]*\bblog\b",
 }
 
 

@@ -63,3 +63,20 @@ def test_api_flow(service):
         hits = client.get("/search", params={"q": "When did we launch Edge Shield?", "kind": "doc"}).json()
         assert hits and hits[0]["doc_id"] == "kb01"
         assert client.post("/triage", json={"text": ""}).status_code == 422
+
+
+def test_related_puts_announcements_first_and_skips_vague_requests(service):
+    assert service.find_related("hey quick question", "Unclear") == []
+    related = service.find_related("Please add the security training deadline reminder to the newsletter",
+                                   "Internal Comms")
+    assert related and related[0]["kind"] == "doc" and related[0]["doc_id"] == "kb13"
+    assert all(r.get("team") != "Unclear" for r in related if r["kind"] == "past_request")
+
+
+def test_review_rewrites_the_reply_for_the_chosen_team(service):
+    req = service.triage("hello? is anyone around")
+    assert req.route == "review" and "confirming which team" in req.draft_reply
+    done = service.review(req.id, "Social", "me")
+    assert done.final_team == "Social"
+    assert "This is with the Social team" in done.draft_reply
+    assert "confirming which team" not in done.draft_reply

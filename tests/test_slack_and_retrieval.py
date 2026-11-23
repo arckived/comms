@@ -52,3 +52,28 @@ def test_retrieval_finds_the_right_announcement():
     queries = load_jsonl(PROJECT_ROOT / "data" / "knowledge" / "retrieval_queries.jsonl")
     top3 = sum(q["relevant"][0] in [r["doc_id"] for r in kb.search(q["query"], k=3)] for q in queries)
     assert top3 / len(queries) >= 0.9
+
+
+def test_shorten_cuts_at_a_word_and_adds_ellipsis():
+    from comms_triage.text import shorten
+
+    assert shorten("short text") == "short text"
+    out = shorten("TechCrunch is writing about the funding round and wants background info plus a spokesperson", 80)
+    assert out.endswith("…") and len(out) <= 80
+    assert "spokesperso…" not in out and out[:-1].split()[-1] in "TechCrunch is writing about the funding round and wants background info plus a".split()
+
+
+def test_kind_filter_finds_docs_even_when_past_requests_dominate():
+    docs = PROJECT_ROOT / "data" / "knowledge" / "sample_announcements.jsonl"
+    # 200 near identical past requests would fill any top-N candidate list on their own.
+    past = [{"id": f"p{i}", "text": f"A reporter wants a comment on the outage, request {i}", "team": "PR"}
+            for i in range(200)]
+    kb = KnowledgeIndex.build(build_entries([docs], past), backend="tfidf")
+    hits = kb.search("A reporter wants a comment on the outage", k=1, kind="doc")
+    assert hits and hits[0]["kind"] == "doc"
+
+
+def test_unclear_past_requests_are_not_indexed():
+    entries = build_entries([], [{"id": "a", "text": "test", "team": "Unclear"},
+                                 {"id": "b", "text": "Need a banner", "team": "Design"}])
+    assert [e["doc_id"] for e in entries] == ["b"]

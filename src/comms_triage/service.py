@@ -13,10 +13,15 @@ import joblib
 from comms_triage.config import ROUTABLE_TEAMS, TEAMS, Settings, get_settings
 from comms_triage.db import Database, Request, utcnow
 from comms_triage.extract.llm_extract import draft_reply, extract_fields
+from comms_triage.extract.schema import ExtractedFields
 from comms_triage.llm import LLMClient
 from comms_triage.retrieve.index import KnowledgeIndex, build_default
 
 log = logging.getLogger(__name__)
+
+# Cosine similarity floors for "Related" items. Below these, a match is more noise than help.
+DOC_MIN_SCORE = 0.30
+PAST_MIN_SCORE = 0.30
 
 
 class TriageService:
@@ -49,11 +54,25 @@ class TriageService:
         return {"team": team, "confidence": float(conf), "route": "auto" if auto else "review",
                 "probabilities": {c: round(float(p), 4) for c, p in ranked}}
 
+    def find_related(self, text: str, team: str) -> list[dict]:
+        """Best matching announcement first, then similar past requests.
+
+        Searched separately so an announcement is shown whenever one is relevant, instead of being
+        crowded out by past requests that share words like "journalist". Vague ("Unclear") requests
+        get nothing: there is no topic to match, and vague past requests are never useful matches.
+        """
+        if team == "Unclear":
+            return []
+        docs = self.kb.search(text, k=1, kind="doc", min_score=DOC_MIN_SCORE)
+        past = [r for r in self.kb.search(text, k=6, kind="past_request", min_score=PAST_MIN_SCORE)
+                if r.get("team") != "Unclear"]
+        return docs + past[: 3 - len(docs)]
+
     def triage(self, text: str, source: str = "api", requester: str | None = None) -> Request:
         text = text.strip()
         decision = self.classify(text)
         fields = extract_fields(text, self.llm)
-        related = self.kb.search(text, k=3, min_score=0.15)
+        related = self.find_related(text, decision["team"])
         auto = decision["route"] == "auto"
         reply = draft_reply(text, decision["team"], fields, auto, related, self.llm)
         row = Request(
@@ -71,8 +90,18 @@ class TriageService:
     def review(self, request_id: int, final_team: str, reviewer: str | None = None) -> Request | None:
         if final_team not in ROUTABLE_TEAMS:
             raise ValueError(f"final_team must be one of {ROUTABLE_TEAMS}")
+        row = self.db.get(request_id)
+        if row is None:
+            return None
+        # Now that a person has decided the team, refresh what depended on the model's guess:
+        # related work (empty for "Unclear" guesses) and the reply ("we're confirming which team...").
+        related = row.related if row.related else self.find_related(row.text, final_team)
+        fields = ExtractedFields(urgency=row.urgency, deadline=row.deadline, deadline_date=row.deadline_date,
+                                 assets=row.assets or [], summary=row.summary or "",
+                                 method=row.extraction_method if row.extraction_method in ("llm", "rules") else "rules")
+        reply = draft_reply(row.text, final_team, fields, True, related, self.llm)
         return self.db.update(request_id, final_team=final_team, reviewed_by=reviewer,
-                              reviewed_at=utcnow(), status="resolved")
+                              reviewed_at=utcnow(), status="resolved", related=related, draft_reply=reply)
 
     def attach_slack(self, request_id: int, channel: str, ts: str) -> Request | None:
         return self.db.update(request_id, slack_channel=channel, slack_ts=ts)
